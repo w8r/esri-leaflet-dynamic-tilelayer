@@ -1,0 +1,64 @@
+{
+  "name": "esri-leaflet-dynamic-tilelayer",
+  "version": "0.0.1-alpha.1",
+  "description": "Tiled dynamic layer plugin for esri-leaflet",
+  "main": "dist/esri-dynamic-tilelayer-legend.js",
+  "scripts": {
+    "start": "grunt",
+    "build": "grunt build",
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:w8r/esri-leaflet-dynamic-tilelayer.git"
+  },
+  "keywords": [
+    "esri",
+    "leaflet",
+    "grid",
+    "tile",
+    "dynamic",
+    "arcgis",
+    "layer"
+  ],
+  "author": "Alexander Milevski <info@w8r.name>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/w8r/esri-leaflet-dynamic-tilelayer/issues"
+  },
+  "homepage": "https://github.com/w8r/esri-leaflet-dynamic-tilelayer#readme",
+  "dependencies": {
+    "esri-leaflet": "^1.0.0-rc.8",
+    "leaflet": "^0.7.3"
+  },
+  "devDependencies": {
+    "assemble": "^0.4.37",
+    "grunt": "^0.4.2",
+    "grunt-concurrent": "^0.5.0",
+    "grunt-contrib-concat": "^0.5.0",
+    "grunt-contrib-connect": "^0.4.1",
+    "grunt-contrib-copy": "^0.5.0",
+    "grunt-contrib-imagemin": "^0.7.1",
+    "grunt-contrib-jshint": "^0.10.0",
+    "grunt-contrib-sass": "^0.7.3",
+    "grunt-contrib-uglify": "^0.6.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-gh-pages": "^0.8.1",
+    "grunt-karma": "^0.8.3",
+    "grunt-newer": "^0.7.0",
+    "grunt-releaseable": "0.0.16",
+    "highlight.js": "^8.0.0",
+    "karma": "^0.12.16",
+    "karma-chai-sinon": "^0.1.3",
+    "karma-chrome-launcher": "^0.1.3",
+    "karma-coverage": "^0.1",
+    "karma-firefox-launcher": "^0.1.3",
+    "karma-mocha": "^0.1.0",
+    "karma-mocha-reporter": "^0.2.5",
+    "karma-phantomjs-launcher": "^0.1.4",
+    "karma-safari-launcher": "^0.1.1",
+    "karma-sauce-launcher": "^0.2.10",
+    "load-grunt-tasks": "^0.4.0",
+    "sinon": "^1.11.1"
+  }
+}
