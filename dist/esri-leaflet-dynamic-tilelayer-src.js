@@ -18,6 +18,8 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
   options: L.Util.extend({}, EsriLeaflet.Layers.DynamicMapLayer.prototype.options),
 
+  _requests: [],
+
   initialize: function(url, options) {
     L.TileLayer.prototype.initialize.call(this, url, options);
     EsriLeaflet.DynamicMapLayer.prototype.initialize.call(this, url, options);
@@ -29,7 +31,34 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
       this.options.bboxSR = sr;
       this.options.imageSR = sr;
     }
+
+    map.on('zoomstart zoomend', this._onZoom, this);
     return L.TileLayer.prototype.onAdd.call(this, map);
+  },
+
+  onRemove: function(map) {
+    map.off('zoomstart zoomend', this._onZoom, this);
+    L.TileLayer.prototype.onRemove.call(this, map);
+    EsriLeaflet.DynamicMapLayer.prototype.onRemove.call(this, map);
+  },
+
+  setLayers: function(layers) {
+    this._reset();
+    EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayers.call(this, layers);
+  },
+
+  setLayerDefs: function(layerDefs) {
+    this._reset();
+    EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayerDefs.call(this, layerDefs);
+  },
+
+  setTimeOptions: function(timeOptions) {
+    this._reset();
+    EsriLeaflet.Layers.DynamicMapLayer.prototype.setTimeOptions.call(this, timeOptions);
+  },
+
+  _onZoom: function(e) {
+    this._zooming = (e.type === 'zoomstart');
   },
 
   _buildExportParams: function(bounds, size) {
@@ -88,8 +117,7 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     });
 
     this.fire('tileloadstart', {
-      tile: tile //,
-        //url: tile.src
+      tile: tile
     });
   },
 
@@ -111,14 +139,21 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
   _requestExport: function(params, bounds, callback) {
     if (this.options.f === 'json') {
-      this._service.get('export', params, function(error, response) {
+      this._requests.push(this._service.get('export', params, function(error, response) {
         callback(null, response.href, bounds);
-      }, this);
+      }, this));
     } else {
       params.f = 'image';
       this._renderImage(this.options.url + 'export' + L.Util.getParamString(params), bounds);
     }
-  }
+  },
+
+  _update: function() {
+    if (this._map && this._map._animatingZoom) {
+      return;
+    }
+    L.TileLayer.prototype._update.call(this);
+  },
 
 });
 
@@ -129,9 +164,7 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
   }
 })([
   'getLayers',
-  'setLayers',
   'getLayerDefs',
-  'setLayerDefs',
   'getTimeOptions',
   'setTimeOptions',
   'metadata',

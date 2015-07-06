@@ -87,7 +87,7 @@ module.exports = function(grunt) {
       },
       dist: {
         files: {
-          'dist/esri-leaflet-legend.js': complete
+          'dist/esri-leaflet-dynamic-tilelayer.js': complete
         }
       }
     },

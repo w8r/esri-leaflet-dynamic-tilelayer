@@ -31,7 +31,7 @@
     z-index: 10;
     background: white;
     padding: 1em;
-    height: 300px;
+    max-height: 260px;
     overflow: auto;
     font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
   }
@@ -39,6 +39,9 @@
   #legend ul {
     padding: 0;
     margin: 0;
+  }
+
+  #legend > ul {
     list-style-type: none;
   }
 
@@ -54,20 +57,64 @@
 
   #legend ul ul {
     margin-left: 15px;
+    list-style-type: none;
   }
 </style>
 
 <div id="map"></div>
+<div id="info" class="leaflet-bar">
+    <div id="legend">
+        <ul>
+            <li>Miscellaneous Education
+                <ul>
+                    <li><label><input name="1" type="checkbox" checked> Primary Completion Rate (1)</label></li>
+                    <li><label><input name="2" type="checkbox" checked> Number of Children Not Enrolled in Primary School (2)</label></li>
+                    <li><label><input name="3" type="checkbox" checked> Percent Students Complete all Primary Grades (3)</label></li>
+                    <li><label><input name="4" type="checkbox"> Percent of Students Progress Primary to Secondary (4)</label></li>
+                    <li><label><input name="5" type="checkbox" checked> Student per Teacher Ratio Primary (5)</label></li>
+                    <li><label><input name="6" type="checkbox" checked> Student per Teacher Ratio Secondary (6)</label></li>
+                    <li><label><input name="7" type="checkbox"> Total Secondary General Education Pupils (7)</label></li>
+                    <li><label><input name="8" type="checkbox"> Total Secondary Vocational Education Pupils (8)</label></li>
+                    <li><label><input name="9" type="checkbox"> Primary Education Expenditure - Percent of GDP (9)</label></li>
+                    <li><label><input name="10" type="checkbox"> Secondary Education Expenditures - Percent of GDP (10)</label></li>
+                    <li><label><input name="11" type="checkbox"> Tertiary Education Expenditures - Percent of GDP (11)</label></li>
+                </ul>
+            </li>
+            <li><label><input name="12" type="checkbox"> Country (12)</label></li>
+        </ul>
+    </div>
+</div>
 <script>
-  var map = L.map('map', {maxZoom: 20}).setView([ 41.78408507289525, -88.13716292381285], 4);
+  var map = L.map('map', {maxZoom: 20}).setView([ 43.54854811091286, 19.072265625], 4);
 
-  //L.esri.basemapLayer('Gray').addTo(map);
+  L.esri.basemapLayer('Gray').addTo(map);
 
-  //var wms = L.tileLayer.wms('fake/url', {}).addTo(map);
+  var checkboxes = document.querySelectorAll('#legend input');
+  function getActiveLayers() {
+    var layers = [];
+    for(var i = 0, len = checkboxes.length; i < len; i++) {
+        if(checkboxes[i].checked){
+            layers.push(checkboxes[i].name);
+        }
+    }
+    return layers;
+  };
 
-  var waterNetwork = L.esri.tiledDynamicMapLayer(
-    //'https://sampleserver6.arcgisonline.com/arcgis/rest/services/Water_Network/MapServer',
-    'http://sampleserver5.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer', {
+  function update() {
+    education.setLayers(getActiveLayers());
+  }
+
+
+  for (var i = 0, len = checkboxes.length; i< len; i++) {
+    L.DomEvent.on(checkboxes[i], 'change', update);
+  }
+
+  var education = L.esri.tiledDynamicMapLayer(
+    'http://maps2.arcgisonline.com/ArcGIS/rest/services/World_Bank/WB_Miscellaneous_Education/MapServer', {
+    //'http://sampleserver5.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer', {
+    //'http://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer', {
+    layers: getActiveLayers(),
+    opacity: 0.5,
     useCors: false,
     tileSize: 512
   }).addTo(map);
