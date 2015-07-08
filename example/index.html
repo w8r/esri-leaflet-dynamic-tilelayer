@@ -87,9 +87,8 @@
 <script>
   var map = L.map('map', {maxZoom: 20}).setView([ 43.54854811091286, 19.072265625], 4);
 
-  L.esri.basemapLayer('Gray').addTo(map);
-
   var checkboxes = document.querySelectorAll('#legend input');
+
   function getActiveLayers() {
     var layers = [];
     for(var i = 0, len = checkboxes.length; i < len; i++) {
@@ -98,25 +97,24 @@
         }
     }
     return layers;
-  };
+  }
 
   function update() {
     education.setLayers(getActiveLayers());
   }
 
-
   for (var i = 0, len = checkboxes.length; i< len; i++) {
     L.DomEvent.on(checkboxes[i], 'change', update);
   }
 
+  L.esri.basemapLayer('Gray').addTo(map);
   var education = L.esri.tiledDynamicMapLayer(
     'http://maps2.arcgisonline.com/ArcGIS/rest/services/World_Bank/WB_Miscellaneous_Education/MapServer', {
-    //'http://sampleserver5.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer', {
-    //'http://sampleserver6.arcgisonline.com/arcgis/rest/services/WorldTimeZones/MapServer', {
     layers: getActiveLayers(),
     opacity: 0.5,
     useCors: false,
-    tileSize: 512
+    tileSize: 512,
+    f: 'image'
   }).addTo(map);
 
 </script>

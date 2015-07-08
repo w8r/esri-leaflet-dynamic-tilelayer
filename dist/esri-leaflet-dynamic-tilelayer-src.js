@@ -20,11 +20,20 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
   _requests: [],
 
+  /**
+   * @constructor
+   * @extends {L.TileLayer}
+   * @param  {String} url
+   * @param  {Object} options
+   */
   initialize: function(url, options) {
     L.TileLayer.prototype.initialize.call(this, url, options);
     EsriLeaflet.DynamicMapLayer.prototype.initialize.call(this, url, options);
   },
 
+  /**
+   * @param  {L.Map} map
+   */
   onAdd: function(map) {
     if (map.options.crs && map.options.crs.code) {
       var sr = map.options.crs.code.split(':')[1];
@@ -32,35 +41,59 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
       this.options.imageSR = sr;
     }
 
-    map.on('zoomstart zoomend', this._onZoom, this);
+    map.on('zoomstart zoomend', this._onZoomChange, this);
     return L.TileLayer.prototype.onAdd.call(this, map);
   },
 
+  /**
+   * @param  {L.Map} map
+   */
   onRemove: function(map) {
-    map.off('zoomstart zoomend', this._onZoom, this);
+    map.off('zoomstart zoomend', this._onZoomChange, this);
     L.TileLayer.prototype.onRemove.call(this, map);
     EsriLeaflet.DynamicMapLayer.prototype.onRemove.call(this, map);
   },
 
+  /**
+   * @param {Array.<Number>|Array.<String>} layers
+   * @return {L.esri.Layers.TiledDynamicMapLayer} self
+   */
   setLayers: function(layers) {
     this._reset();
-    EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayers.call(this, layers);
+    return EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayers.call(this, layers);
   },
 
+  /**
+   * @param {Array.<Object>} layerDefs
+   * @return {L.esri.Layers.TiledDynamicMapLayer} self
+   */
   setLayerDefs: function(layerDefs) {
     this._reset();
-    EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayerDefs.call(this, layerDefs);
+    return EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayerDefs.call(this, layerDefs);
   },
 
+  /**
+   * @param {Object} timeOptions
+   * @return {L.esri.Layers.TiledDynamicMapLayer} self
+   */
   setTimeOptions: function(timeOptions) {
     this._reset();
-    EsriLeaflet.Layers.DynamicMapLayer.prototype.setTimeOptions.call(this, timeOptions);
+    return EsriLeaflet.Layers.DynamicMapLayer.prototype.setTimeOptions.call(this, timeOptions);
   },
 
-  _onZoom: function(e) {
+  /**
+   * Set/unset zooming flag to avoid unneeded requests
+   * @param  {Object} e
+   */
+  _onZoomChange: function(e) {
     this._zooming = (e.type === 'zoomstart');
   },
 
+  /**
+   * @param  {L.LatLngBounds} bounds
+   * @param  {L.Point}        size
+   * @return {Object}
+   */
   _buildExportParams: function(bounds, size) {
     var ne = this._map.options.crs.project(bounds._northEast);
     var sw = this._map.options.crs.project(bounds._southWest);
@@ -106,6 +139,10 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     return params;
   },
 
+  /**
+   * @param  {Object}  tile
+   * @param  {L.Point} tilePoint
+   */
   _loadTile: function(tile, tilePoint) {
     tile._layer = this;
     tile.onload = this._tileOnLoad;
@@ -121,6 +158,11 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     });
   },
 
+  /**
+   * Async request tile url
+   * @param  {L.Point}  tilePoint
+   * @param  {Function} callback
+   */
   getTileUrl: function(tilePoint, callback) { // (Point, Number) -> String
 
     var map = this._map,
@@ -137,6 +179,12 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     this._requestExport(params, bounds, callback);
   },
 
+  /**
+   * Export call, json or image straight awy
+   * @param  {Object}          params
+   * @param  {L.LatLngBounds}  bounds
+   * @param  {Function}        callback
+   */
   _requestExport: function(params, bounds, callback) {
     if (this.options.f === 'json') {
       this._requests.push(this._service.get('export', params, function(error, response) {
@@ -144,16 +192,19 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
       }, this));
     } else {
       params.f = 'image';
-      this._renderImage(this.options.url + 'export' + L.Util.getParamString(params), bounds);
+      callback(null, this.options.url + 'export' + L.Util.getParamString(params), bounds);
     }
   },
 
+  /**
+   * Bounds or params changed
+   */
   _update: function() {
     if (this._map && this._map._animatingZoom) {
       return;
     }
     L.TileLayer.prototype._update.call(this);
-  },
+  }
 
 });
 
@@ -163,18 +214,27 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
       EsriLeaflet.Layers.DynamicMapLayer.prototype[methods[i]];
   }
 })([
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.getLayers as getLayers */
   'getLayers',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.getLayerDefs as getLayerDefs */
   'getLayerDefs',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.getTimeOptions as getTimeOptions */
   'getTimeOptions',
-  'setTimeOptions',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.metadata as metadata */
   'metadata',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.query as query */
   'query',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.identify as identify */
   'identify',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype.find as find */
   'find',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype._getPopupData as _getPopupData */
   '_getPopupData',
+  /** @borrows L.esri.Layers.DynamicMapLayer.prototype._propagateEvent as _propagateEvent */
   '_propagateEvent'
 ]);
 
+// factory
 EsriLeaflet.tiledDynamicMapLayer = function(url, options) {
   return new EsriLeaflet.Layers.TiledDynamicMapLayer(url, options);
 };
