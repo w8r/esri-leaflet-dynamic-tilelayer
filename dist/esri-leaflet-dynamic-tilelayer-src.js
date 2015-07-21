@@ -16,8 +16,14 @@
 
 EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
-  options: L.Util.extend({}, EsriLeaflet.Layers.DynamicMapLayer.prototype.options),
+  options: L.Util.extend({},
+    EsriLeaflet.Layers.DynamicMapLayer.prototype.options, {
+      redrawBuffer: true
+    }),
 
+  /**
+   * @type {Array.<XmlHttpRequest>}
+   */
   _requests: [],
 
   /**
@@ -36,13 +42,22 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    */
   onAdd: function(map) {
     if (map.options.crs && map.options.crs.code) {
-      var sr = map.options.crs.code.split(':')[1];
+      var sr = this._getSr(map.options.crs.code);
       this.options.bboxSR = sr;
       this.options.imageSR = sr;
     }
 
     map.on('zoomstart zoomend', this._onZoomChange, this);
     return L.TileLayer.prototype.onAdd.call(this, map);
+  },
+
+  /**
+   * Could be WKT and at least possble to override
+   * @param  {String} code
+   * @return {String}
+   */
+  _getSr: function(code) {
+    return code.split(':')[1];
   },
 
   /**
@@ -59,7 +74,7 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * @return {L.esri.Layers.TiledDynamicMapLayer} self
    */
   setLayers: function(layers) {
-    this._reset();
+    this._redraw();
     return EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayers.call(this, layers);
   },
 
@@ -68,7 +83,7 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * @return {L.esri.Layers.TiledDynamicMapLayer} self
    */
   setLayerDefs: function(layerDefs) {
-    this._reset();
+    this._redraw();
     return EsriLeaflet.Layers.DynamicMapLayer.prototype.setLayerDefs.call(this, layerDefs);
   },
 
@@ -77,7 +92,7 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * @return {L.esri.Layers.TiledDynamicMapLayer} self
    */
   setTimeOptions: function(timeOptions) {
-    this._reset();
+    this._redraw();
     return EsriLeaflet.Layers.DynamicMapLayer.prototype.setTimeOptions.call(this, timeOptions);
   },
 
@@ -150,8 +165,12 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
     this._adjustTilePoint(tilePoint);
     this.getTileUrl(tilePoint, function(err, url) {
-      tile.src = url;
-    });
+      if (err) {
+        this._tileOnError.call(tile);
+      } else {
+        tile.src = url;
+      }
+    }, tile);
 
     this.fire('tileloadstart', {
       tile: tile
@@ -162,17 +181,19 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * Async request tile url
    * @param  {L.Point}  tilePoint
    * @param  {Function} callback
+   * @param  {Image}    tile
    */
-  getTileUrl: function(tilePoint, callback) { // (Point, Number) -> String
-
+  getTileUrl: function(tilePoint, callback) {
     var map = this._map,
       tileSize = this.options.tileSize,
 
       nwPoint = tilePoint.multiplyBy(tileSize),
       sePoint = nwPoint.add([tileSize, tileSize]);
 
-    var bounds = new L.LatLngBounds(map.unproject(nwPoint, tilePoint.z),
-      map.unproject(sePoint, tilePoint.z));
+    var bounds = new L.LatLngBounds(
+      map.unproject(nwPoint, tilePoint.z),
+      map.unproject(sePoint, tilePoint.z)
+    );
     var size = new L.Point(this.options.tileSize, this.options.tileSize);
 
     var params = this._buildExportParams(bounds, size);
@@ -188,12 +209,48 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
   _requestExport: function(params, bounds, callback) {
     if (this.options.f === 'json') {
       this._requests.push(this._service.get('export', params, function(error, response) {
-        callback(null, response.href, bounds);
+        if (error) {
+          callback(error, response);
+        } else {
+          callback(null, response.href, bounds);
+        }
       }, this));
     } else {
       params.f = 'image';
       callback(null, this.options.url + 'export' + L.Util.getParamString(params), bounds);
     }
+  },
+
+  /**
+   * Smooth redraw, see
+   * @see https://github.com/w8r/leaflet-wms-bgbuffer
+   * @return {EsriLeaflet.Layers.TiledDynamicMapLayer}
+   */
+  _redraw: function() {
+    if (this._map) {
+      if (this.options.redrawBuffer) {
+        var front = this._tileContainer;
+        this._clearBgBuffer();
+        this._tileContainer = this._bgBuffer;
+        this._bgBuffer = front;
+
+        this._tiles = {};
+        this._tilesToLoad = 0;
+        this._tilesTotal = 0;
+      } else {
+        L.TileLayer.prototype._reset.call(this, {
+          hard: true
+        });
+      }
+    }
+  },
+
+  /**
+   * Override for old IE, just to have bg buffer for tiles
+   */
+  _initContainer: function() {
+    this._animated = this._animated || this.options.redrawBuffer;
+    L.TileLayer.prototype._initContainer.call(this);
   },
 
   /**
@@ -235,9 +292,10 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 ]);
 
 // factory
-EsriLeaflet.tiledDynamicMapLayer = function(url, options) {
-  return new EsriLeaflet.Layers.TiledDynamicMapLayer(url, options);
-};
+EsriLeaflet.Layers.tiledDynamicMapLayer =
+  EsriLeaflet.tiledDynamicMapLayer = function(url, options) {
+    return new EsriLeaflet.Layers.TiledDynamicMapLayer(url, options);
+  };
 
 
   return EsriLeaflet;

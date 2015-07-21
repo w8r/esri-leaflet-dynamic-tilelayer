@@ -1,3 +1,3 @@
 if (!this.EsriLeaflet) {
-    this.EsriLeaflet = L.esri;
+  this.EsriLeaflet = window.L.esri;
 }
