@@ -28,8 +28,8 @@
   },
   "homepage": "https://github.com/w8r/esri-leaflet-dynamic-tilelayer#readme",
   "dependencies": {
-    "esri-leaflet": "^1.0.0-rc.8",
-    "leaflet": "~0.7.3"
+    "esri-leaflet": "^1.0.0",
+    "leaflet": "^1.0.0-beta.1"
   },
   "devDependencies": {
     "assemble": "^0.4.37",

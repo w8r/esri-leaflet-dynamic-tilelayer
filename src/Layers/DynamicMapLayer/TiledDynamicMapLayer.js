@@ -2,13 +2,19 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
 
   options: L.Util.extend({},
     EsriLeaflet.Layers.DynamicMapLayer.prototype.options, {
-      redrawBuffer: true
+      redrawBuffer: true,
+      redrawBufferTimeout: 1000
     }),
 
   /**
    * @type {Array.<XmlHttpRequest>}
    */
   _requests: [],
+
+  /**
+   * @type {Object}
+   */
+  _oldTiles: {},
 
   /**
    * @constructor
@@ -142,12 +148,22 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * @param  {Object}  tile
    * @param  {L.Point} tilePoint
    */
-  _loadTile: function(tile, tilePoint) {
-    tile._layer = this;
-    tile.onload = this._tileOnLoad;
-    tile.onerror = this._tileOnError;
+  createTile: function (tilePoint, done) {
+    var tile = document.createElement('img');
 
-    this._adjustTilePoint(tilePoint);
+    tile.onload = L.bind(this._tileOnLoad, this, done, tile);
+    tile.onerror = L.bind(this._tileOnError, this, done, tile);
+
+    if (this.options.crossOrigin) {
+      tile.crossOrigin = '';
+    }
+
+    /*
+     Alt tag is set to empty string to keep screen readers from reading URL and for compliance reasons
+     http://www.w3.org/TR/WCAG20-TECHS/H67
+    */
+    tile.alt = '';
+
     this.getTileUrl(tilePoint, function(err, url) {
       if (err) {
         this._tileOnError.call(tile);
@@ -159,6 +175,12 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     this.fire('tileloadstart', {
       tile: tile
     });
+
+    return tile;
+  },
+
+  _tileReady: function() {
+    L.TileLayer.prototype._tileReady.apply(this, arguments);
   },
 
   /**
@@ -214,27 +236,25 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
     if (this._map) {
       if (this.options.redrawBuffer) {
         var front = this._tileContainer;
-        this._clearBgBuffer();
-        this._tileContainer = this._bgBuffer;
-        this._bgBuffer = front;
-
+        this._oldTiles = this._tiles;
         this._tiles = {};
         this._tilesToLoad = 0;
         this._tilesTotal = 0;
+
+        this.once('load', function() {
+          setTimeout(L.Util.bind(function() {
+            for (var id in this._oldTiles) {
+              L.DomUtil.remove(this._oldTiles[id].el);
+            }
+            this._oldTiles = {};
+          }, this), this.options.redrawBufferTimeout);
+        }, this);
       } else {
         L.TileLayer.prototype._reset.call(this, {
           hard: true
         });
       }
     }
-  },
-
-  /**
-   * Override for old IE, just to have bg buffer for tiles
-   */
-  _initContainer: function() {
-    this._animated = this._animated || this.options.redrawBuffer;
-    L.TileLayer.prototype._initContainer.call(this);
   },
 
   /**
