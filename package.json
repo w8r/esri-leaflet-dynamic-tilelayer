@@ -1,8 +1,8 @@
 {
   "name": "esri-leaflet-dynamic-tilelayer",
-  "version": "0.7.31",
+  "version": "0.7.32",
   "description": "Tiled dynamic layer plugin for esri-leaflet",
-  "main": "dist/esri-dynamic-tilelayer-legend.js",
+  "main": "dist/esri-leaflet-dynamic-tilelayer-src.js",
   "scripts": {
     "start": "grunt",
     "build": "grunt build",
