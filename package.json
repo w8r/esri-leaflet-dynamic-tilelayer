@@ -1,6 +1,6 @@
 {
   "name": "esri-leaflet-dynamic-tilelayer",
-  "version": "0.7.32",
+  "version": "0.7.33",
   "description": "Tiled dynamic layer plugin for esri-leaflet",
   "main": "dist/esri-leaflet-dynamic-tilelayer-src.js",
   "scripts": {

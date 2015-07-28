@@ -82,19 +82,11 @@ EsriLeaflet.Layers.TiledDynamicMapLayer = L.TileLayer.extend({
    * @return {Object}
    */
   _buildExportParams: function(bounds, size) {
-    var ne = this._map.options.crs.project(bounds._northEast);
-    var sw = this._map.options.crs.project(bounds._southWest);
-
-    //ensure that we don't ask ArcGIS Server for a taller image than we have actual map displaying
-    var top = this._map.latLngToLayerPoint(bounds._northEast);
-    var bottom = this._map.latLngToLayerPoint(bounds._southWest);
-
-    if (top.y > 0 || bottom.y < size.y) {
-      size.y = bottom.y - top.y;
-    }
+    var nw = this._map.options.crs.project(bounds.getNorthWest());
+    var se = this._map.options.crs.project(bounds.getSouthEast());
 
     var params = {
-      bbox: [sw.x, sw.y, ne.x, ne.y].join(','),
+      bbox: [se.x, se.y, nw.x, nw.y].join(','),
       size: size.x + ',' + size.y,
       dpi: 96,
       format: this.options.format,
